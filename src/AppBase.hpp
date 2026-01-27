@@ -173,6 +173,11 @@ class AppBase
         glfwMakeContextCurrent(window);
         glfwSwapInterval(1);
 
+        // Get content scale for HiDPI/Retina displays (GLFW 3.3+)
+        float xscale, yscale;
+        glfwGetWindowContentScale(window, &xscale, &yscale);
+        dpi_scale = xscale;
+
         // Add window based callbacks to the underlying app
         glfwSetMouseButtonCallback(window, &Derived::MouseButtonCallback);
         glfwSetCursorPosCallback(window, &Derived::CursorPosCallback);
@@ -194,13 +199,14 @@ class AppBase
         // Setup Platform/Renderer backends
         ImGui_ImplGlfw_InitForOpenGL(window, true);
         ImGui_ImplOpenGL3_Init(glsl_version);
-        // Add custom fonts
+        
+        // Add custom fonts (scaled for HiDPI/Retina crisp rendering)
         ImGuiIO& io = ImGui::GetIO();
 
         std::string font_path_default = getResourcePath("fonts/Roboto-Medium.ttf");
         std::string font_path_special = getResourcePath("fonts/arial.ttf");
         std::string font_path_check = getResourcePath("fonts/seguisym.ttf");
-        ImFont* default_font = io.Fonts->AddFontFromFileTTF(font_path_default.c_str(), 18.0f,nullptr,io.Fonts->GetGlyphRangesDefault());
+        ImFont* default_font = io.Fonts->AddFontFromFileTTF(font_path_default.c_str(), 18.0f * dpi_scale, nullptr, io.Fonts->GetGlyphRangesDefault());
         if (!default_font)
         {
 #ifndef NDEBUG
@@ -211,9 +217,9 @@ class AppBase
 		config.MergeMode = true;
 		ImWchar arrow_ranges[] = { 0x2190, 0x2206, 0 };
 		ImWchar check_ranges[] = { 0x2713, 0x2718, 0 };
-        ImFont* arrow_font = io.Fonts->AddFontFromFileTTF(font_path_special.c_str(), 24.0f,&config,arrow_ranges);
-        ImFont* greek_font = io.Fonts->AddFontFromFileTTF(font_path_special.c_str(), 18.0f, &config, io.Fonts->GetGlyphRangesGreek());
-		ImFont* check_font = io.Fonts->AddFontFromFileTTF(font_path_check.c_str(), 18.0f, &config, check_ranges);
+        ImFont* arrow_font = io.Fonts->AddFontFromFileTTF(font_path_special.c_str(), 24.0f * dpi_scale, &config, arrow_ranges);
+        ImFont* greek_font = io.Fonts->AddFontFromFileTTF(font_path_special.c_str(), 18.0f * dpi_scale, &config, io.Fonts->GetGlyphRangesGreek());
+		ImFont* check_font = io.Fonts->AddFontFromFileTTF(font_path_check.c_str(), 18.0f * dpi_scale, &config, check_ranges);
         //ImFont* arrow_font = io.Fonts->AddFontFromFileTTF("./misc/fonts/arial.ttf", 24.0f, nullptr, arrow_ranges);
         if (!arrow_font)
         {
@@ -229,6 +235,10 @@ class AppBase
         }
 
         io.Fonts->Build();
+        
+        // Scale fonts back down so they appear at correct logical size
+        // (fonts are loaded at high-res for crisp rendering, then scaled down for layout)
+        io.FontGlobalScale = 1.0f / dpi_scale;
         // Load Images
 
     }
@@ -299,4 +309,5 @@ class AppBase
   private:
     GLFWwindow* window = nullptr;
     ImVec4 clear_color = ImVec4(0.1058, 0.1137f, 0.1255f, 1.00f);
+    float dpi_scale = 1.0f;  // HiDPI/Retina scale factor
 };
