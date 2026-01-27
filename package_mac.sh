@@ -63,10 +63,46 @@ if [ ! -f "$INFO_PLIST" ]; then
 EOL
 fi
 
-# 6. Optionally create a .dmg
-# DMG_NAME="${APP_NAME}.dmg"
-# echo "Creating DMG..."
-# hdiutil create -volname "$APP_NAME" -srcfolder "$APP_BUNDLE_DIR" -ov -format UDZO "$DMG_NAME"
+# 6. Optionally sign the app bundle (if codesigning identity is available)
+IDENTITY=$(security find-identity -v -p codesigning 2>/dev/null | grep "Developer ID Application" | awk -F'"' '{print $2}' | head -1)
 
-# echo "Packaging complete!"
-# echo "You can distribute ${DMG_NAME} or the ${APP_BUNDLE_DIR} bundle."
+if [ -z "$IDENTITY" ]; then
+    echo "Warning: No Developer ID Application certificate found in keychain"
+    echo "Skipping code signing. The app bundle will not be signed."
+    echo ""
+    echo "Packaging complete! (unsigned)"
+    echo "To sign the app, install a Developer ID Application certificate and run again."
+else
+    echo "Signing with: $IDENTITY"
+
+    # Sign embedded executables in Resources (like dfu-programmer-mac)
+    echo "Signing embedded binaries..."
+    if [ -f "$APP_BUNDLE_DIR/Contents/Resources/firmware/dfu-programmer-mac" ]; then
+        codesign --force --sign "$IDENTITY" \
+            --timestamp \
+            --options runtime \
+            "$APP_BUNDLE_DIR/Contents/Resources/firmware/dfu-programmer-mac"
+    fi
+
+    # Sign the main executable
+    echo "Signing main executable..."
+    codesign --force --sign "$IDENTITY" \
+        --timestamp \
+        --options runtime \
+        --entitlements entitlements.plist \
+        "$APP_BUNDLE_DIR/Contents/MacOS/$APP_NAME"
+
+    # Sign the entire app bundle
+    echo "Signing app bundle..."
+    codesign --force --sign "$IDENTITY" \
+        --timestamp \
+        --options runtime \
+        --entitlements entitlements.plist \
+        "$APP_BUNDLE_DIR"
+
+    echo ""
+    echo "Packaging complete! (signed)"
+    echo "App bundle is signed and ready for DMG creation."
+fi
+
+echo "You can now run ./make_signed_dmg.sh to create a notarized DMG."

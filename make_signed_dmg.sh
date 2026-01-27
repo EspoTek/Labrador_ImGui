@@ -8,42 +8,21 @@ IDENTITY=$(security find-identity -v -p codesigning | grep "Developer ID Applica
 
 if [ -z "$IDENTITY" ]; then
     echo "Error: No Developer ID Application certificate found in keychain"
+    echo "Cannot create signed DMG without a Developer ID certificate."
     exit 1
 fi
 
-echo "Signing with: $IDENTITY"
+echo "Using identity: $IDENTITY"
 
-# Sign the .app bundle
-APP_BUNDLE="mac_appbundle/LabraScope.app"
+# Verify the app bundle is already signed (should be done by package_mac.sh)
+APP_BUNDLE="${SCRIPT_DIR}/mac_appbundle/LabraScope.app"
+if ! codesign --verify --deep --strict "$APP_BUNDLE" 2>/dev/null; then
+    echo "Warning: App bundle is not signed or signature is invalid."
+    echo "Run ./package_mac.sh first to build and sign the app bundle."
+    exit 1
+fi
 
-# Sign embedded executables in Resources (like dfu-programmer-mac)
-echo "Signing embedded binaries..."
-codesign --force --sign "$IDENTITY" \
-    --timestamp \
-    --options runtime \
-    "$APP_BUNDLE/Contents/Resources/firmware/dfu-programmer-mac"
-
-# Sign any embedded frameworks/dylibs first (if any)
-# find "$APP_BUNDLE" -name "*.dylib" -exec codesign --force --sign "$IDENTITY" --timestamp --options runtime {} \;
-# find "$APP_BUNDLE" -name "*.framework" -exec codesign --force --sign "$IDENTITY" --timestamp --options runtime {} \;
-
-# Sign the main executable
-echo "Signing main executable..."
-codesign --force --sign "$IDENTITY" \
-    --timestamp \
-    --options runtime \
-    --entitlements entitlements.plist \
-    "$APP_BUNDLE/Contents/MacOS/LabraScope"
-
-# Sign the entire app bundle
-echo "Signing app bundle..."
-codesign --force --sign "$IDENTITY" \
-    --timestamp \
-    --options runtime \
-    --entitlements entitlements.plist \
-    "$APP_BUNDLE"
-
-echo "Signing complete."
+echo "App bundle signature verified."
 
 # Remove old DMG if it exists
 rm -f "${SCRIPT_DIR}/LabraScope.dmg"
