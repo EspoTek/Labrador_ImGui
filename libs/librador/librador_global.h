@@ -4,7 +4,7 @@
 #ifdef FORCE_COMPILATION_FOR_QT5
     #include <QtCore/qglobal.h>
 #else
-    #if defined(_WIN32) || defined(_WIN64) // jdar updated from: #ifdef _WIN32 | _WIN64 to address warning
+    #if defined(_WIN32) || defined(_WIN64)
         #define Q_DECL_EXPORT __declspec(dllexport)
         #define Q_DECL_IMPORT
     #else

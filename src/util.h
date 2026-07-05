@@ -25,8 +25,10 @@
 namespace constants
 {
 // Desired Firmware Version/Variant
-constexpr uint16_t DESIRED_FW_VERSION = 7;
-constexpr uint8_t DESIRED_FW_VARIANT = 2;
+// 0x000C (12): AIO firmware - iso6/iso1/bulk transports, padded bulk
+// framing, bulk half-parity + DMA phase fix.  Variant 3 = AIO build.
+constexpr uint16_t DESIRED_FW_VERSION = 0x000C;
+constexpr uint8_t DESIRED_FW_VARIANT = 3;
 
 // Theme Colours
 constexpr ImU32 PRIM_LIGHT = IM_COL32(255, 255, 255, 255); // primary light

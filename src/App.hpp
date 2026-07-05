@@ -61,12 +61,14 @@ class App : public AppBase<App>
 
 	void connectToLabrador(bool * flash_firmware_popup)
 	{
-		// Initialise the USB
-		int error = librador_setup_usb();
-		if (error)
+		// Initialise the USB.  librador_connect() returns <0 on failure; a
+		// positive value means connected but the firmware didn't match (the
+		// version check below raises the flash popup for that case).
+		int error = librador_connect();
+		if (error < 0)
 		{
 #ifndef NDEBUG
-			printf("librador_setup_usb FAILED with error code %d\t\n", error);
+			printf("librador_connect FAILED with error code %d\t\n", error);
 #endif
 			// std::exit(error);
 			connected = false;
@@ -246,7 +248,7 @@ class App : public AppBase<App>
 				const int padding = 6;
 				ImGuiStyle& style = ImGui::GetStyle();
 
-				// Simulate the window size we’re about to set
+				// Simulate the window size weï¿½re about to set
 				ImVec2 display_size = ImGui::GetIO().DisplaySize;
 
 				float base_window_width = display_size.x;
@@ -255,7 +257,7 @@ class App : public AppBase<App>
 				float plot_width = (base_window_width - 2 * style.WindowPadding.x) * 0.60f - padding;
 				float right_col_width = base_window_width - plot_width - 2 * padding - 2 * style.WindowPadding.x;
 
-				const float min_right_width = min_widget_width; // whatever feels “comfortable” for your widgets
+				const float min_right_width = min_widget_width; // whatever feels ï¿½comfortableï¿½ for your widgets
 
 				float content_width = base_window_width;
 				if (right_col_width < min_right_width) {
@@ -263,7 +265,7 @@ class App : public AppBase<App>
 					content_width = base_window_width + deficit;
 				}
 
-				// Tell ImGui “the scrollable content is this wide”
+				// Tell ImGui ï¿½the scrollable content is this wideï¿½
 				ImGui::SetNextWindowContentSize(ImVec2(content_width, 0.0f));
 
 

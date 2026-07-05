@@ -35,6 +35,30 @@ add_static_library(libusb "libusb/libusb-1.0.a" "libusb/")
 add_static_library(fftw "fftw/libfftw3.a" "fftw/")
 add_static_library(nfd "nfd/libnfd.a" "nfd/")
 add_static_library(glfw "glfw/libglfw3.a" "glfw/include")
+# Vendored dfu-programmer core (libdfuprog): librador drives the bootloader
+# through it (jump-to-bootloader, launch, firmware flash) instead of shelling
+# out.  Compiled against the same static libusb as the rest of the app.
+set(DFUPROG_DIR ${PROJECT_SOURCE_DIR}/libs/libdfuprog)
+add_library(libdfuprog_vendored STATIC
+    ${DFUPROG_DIR}/dfu-programmer/src/arguments.c
+    ${DFUPROG_DIR}/dfu-programmer/src/atmel.c
+    ${DFUPROG_DIR}/dfu-programmer/src/commands.c
+    ${DFUPROG_DIR}/dfu-programmer/src/dfu.c
+    ${DFUPROG_DIR}/dfu-programmer/src/intel_hex.c
+    ${DFUPROG_DIR}/dfu-programmer/src/stm32.c
+    ${DFUPROG_DIR}/dfu-programmer/src/util.c
+    ${DFUPROG_DIR}/libdfuprog.c
+)
+target_include_directories(libdfuprog_vendored PRIVATE
+    ${DFUPROG_DIR}
+    ${DFUPROG_DIR}/dfu-programmer/src
+)
+target_compile_definitions(libdfuprog_vendored PRIVATE HAVE_CONFIG_H)
+target_link_libraries(libdfuprog_vendored PRIVATE libusb)
+# dfu-programmer predates C23 (dfu-bool.h defines enum constants named
+# true/false, keywords from C23 on); pin the dialect.
+set_target_properties(libdfuprog_vendored PROPERTIES C_STANDARD 17 C_EXTENSIONS ON)
+
 # Define Sources
 set(IMGUI_DIR libs/imgui)
 set(LIBRADOR_DIR libs/librador)
@@ -48,6 +72,9 @@ set(SOURCES
     ${LIBRADOR_DIR}/librador.cpp
     ${LIBRADOR_DIR}/usbcallhandler.cpp
     ${LIBRADOR_DIR}/o1buffer.cpp
+    ${LIBRADOR_DIR}/uartstyledecoder.cpp
+    ${LIBRADOR_DIR}/isobufferbuffer.cpp
+    ${LIBRADOR_DIR}/i2cdecoder.cpp
     ${IMGUI_DIR}/imgui.cpp
     ${IMGUI_DIR}/imgui_demo.cpp
     ${IMGUI_DIR}/imgui_draw.cpp
@@ -60,19 +87,22 @@ set(SOURCES
 )
 # Add include directories
 add_executable(${PROJECT_NAME} ${SOURCES})
+target_compile_definitions(${PROJECT_NAME} PRIVATE LIBRADOR_ENABLE_LOGGING)
 
-target_include_directories(${PROJECT_NAME} PRIVATE 
+target_include_directories(${PROJECT_NAME} PRIVATE
     misc/cpp/
     backends/
     ${EXTERNAL_DIR}/exprtk
     ${IMGUI_DIR}/
     ${LIBRADOR_DIR}/
+    ${DFUPROG_DIR}/
     # ${EXTERNAL_DIR}/glfw/include/
     src/
     ${EXTERNAL_DIR}/
 )
 
 target_link_libraries(${PROJECT_NAME}
+    libdfuprog_vendored
     libusb
     fftw
     nfd
