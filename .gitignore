@@ -371,3 +371,7 @@ Makefile
 mac_appbundle/
 LabradorImgui.dmg
 .DS_Store
+# CMake build directories (macOS)
+build_bulk/
+build_universal/
+build_test/

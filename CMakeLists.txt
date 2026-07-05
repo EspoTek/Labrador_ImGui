@@ -2,6 +2,13 @@
 # Use Visual Studio .sln file on Windows.
 
 cmake_minimum_required(VERSION 4.1.1)
+
+# Universal binary by default: Intel (macOS 10.15+) and Apple Silicon
+# (11.0+).  The static libs in libs/ carry both slices.  Override with
+# -DCMAKE_OSX_ARCHITECTURES=arm64 for a faster single-arch dev build.
+set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64" CACHE STRING "macOS build architectures")
+set(CMAKE_OSX_DEPLOYMENT_TARGET "10.15" CACHE STRING "Minimum macOS version")
+
 project(LabraScope VERSION 1.0)
 
 # Set C++ standard
