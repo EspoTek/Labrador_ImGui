@@ -375,3 +375,5 @@ LabradorImgui.dmg
 build_bulk/
 build_universal/
 build_test/
+build_package/
+mac_appbundle.old/

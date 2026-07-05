@@ -3,7 +3,10 @@ set -e
 
 # CONFIG
 APP_NAME="LabraScope"
-BUILD_DIR="build"
+# Dedicated build dir: a stale cache in a dev build dir would silently keep
+# old settings (e.g. a single-arch CMAKE_OSX_ARCHITECTURES) - packaging always
+# configures fresh defaults (universal x86_64+arm64, macOS 10.15+).
+BUILD_DIR="build_package"
 APP_BUNDLE_DIR="mac_appbundle/${APP_NAME}.app"
 CONTENTS_DIR="${APP_BUNDLE_DIR}/Contents"
 MACOS_DIR="${CONTENTS_DIR}/MacOS"
@@ -58,6 +61,8 @@ if [ ! -f "$INFO_PLIST" ]; then
   <string>APPL</string>
   <key>CFBundleIconFile</key>
   <string>media/iconfile</string>
+  <key>LSMinimumSystemVersion</key>
+  <string>10.15</string>
 </dict>
 </plist>
 EOL
